@@ -39,9 +39,6 @@ namespace MenuAPI
         public static bool PreventExitingMenu { get; set; } = false;
         public static bool DisableBackButton { get; set; } = false;
         public static bool SetDrawOrder { get; set; } = true;
-        public static Control MenuToggleKey { get; set; } = Control.InteractionMenu;
-
-        public static bool EnableMenuToggleKeyOnController { get; set; } = true;
 
         internal static Dictionary<MenuItem, Menu> MenuButtons { get; private set; } = new Dictionary<MenuItem, Menu>();
 
@@ -94,7 +91,6 @@ namespace MenuAPI
             Tick += DrawInstructionalButtons;
             Tick += ProcessMainButtons;
             Tick += ProcessDirectionalButtons;
-            Tick += ProcessToggleMenuButton;
             Tick += MenuButtonsDisableChecks;
         }
 
@@ -346,40 +342,6 @@ namespace MenuAPI
         }
 
         /// <summary>
-        /// Processes the menu toggle button to check if the menu should open or close.
-        /// </summary>
-        /// <returns></returns>
-        private async Task ProcessToggleMenuButton()
-        {
-            await ProcessToggleMenuButtonFiveM();
-        }
-
-        private async Task ProcessToggleMenuButtonFiveM()
-        {
-            if (!Game.IsPaused && !IsPauseMenuRestarting() && IsScreenFadedIn() && !IsPlayerSwitchInProgress() && !Game.Player.IsDead && !DisableMenuButtons)
-            {
-                if (IsAnyMenuOpen())
-                {
-                    DisableMenuKeyThisFrame();
-                }
-                else
-                {
-                    if (Game.CurrentInputMode == InputMode.GamePad)
-                    {
-                        if (!EnableMenuToggleKeyOnController)
-                            return;
-
-                        await HandleMenuToggleKeyForController();
-                    }
-                    else
-                    {
-                        HandleMenuToggleKeyForKeyboard();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Process left/right/up/down buttons (also holding down buttons will speed up after 3 iterations)
         /// </summary>
         /// <returns></returns>
@@ -551,71 +513,6 @@ namespace MenuAPI
             }
         }
 
-        private void HandleMenuToggleKeyForKeyboard()
-        {
-            if (
-                (Game.IsControlJustPressed(0, MenuToggleKey) || Game.IsDisabledControlJustPressed(0, MenuToggleKey)) &&
-                !Game.IsPaused &&
-                !Game.Player.IsDead &&
-                !IsPlayerSwitchInProgress() &&
-                !DontOpenAnyMenu &&
-                IsScreenFadedIn()
-            )
-            {
-                if (!Menus.Any())
-                {
-                    return;
-                }
-                if (MainMenu != null)
-                {
-                    MainMenu.OpenMenu();
-                }
-                else
-                {
-                    Menus.First().OpenMenu();
-                }
-            }
-        }
-
-        private async Task HandleMenuToggleKeyForController()
-        {
-            int tmpTimer = GetGameTimer();
-            while ((Game.IsControlPressed(0, Control.InteractionMenu) || Game.IsDisabledControlPressed(0, Control.InteractionMenu)) && !Game.IsPaused && IsScreenFadedIn() && !Game.Player.IsDead && !IsPlayerSwitchInProgress() && !DontOpenAnyMenu)
-            {
-                if (GetGameTimer() - tmpTimer > 400)
-                {
-                    if (MainMenu != null)
-                    {
-                        MainMenu.OpenMenu();
-                    }
-                    else
-                    {
-                        if (Menus.Count > 0)
-                        {
-                            Menus[0].OpenMenu();
-                        }
-                    }
-                    break;
-                }
-                await Delay(0);
-            }
-        }
-
-        private void DisableMenuKeyThisFrame()
-        {
-            Game.DisableControlThisFrame(0, MenuToggleKey);
-            if (Game.CurrentInputMode == InputMode.MouseAndKeyboard)
-            {
-                if ((Game.IsControlJustPressed(0, MenuToggleKey) || Game.IsDisabledControlJustPressed(0, MenuToggleKey)) && !PreventExitingMenu)
-                {
-                    var menu = GetCurrentMenu();
-                    if (menu != null)
-                    {
-                        menu.CloseMenu();
-                    }
-                }
-            }
-        }
 
         private async Task HandleUpNavigation(Menu currentMenu)
         {
