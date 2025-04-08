@@ -82,6 +82,8 @@ namespace MenuAPI
             Right
         }
 
+        internal static bool _instructionalButtonsLoaded;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -207,6 +209,7 @@ namespace MenuAPI
         {
             if (!IsAnyMenuOpen())
             {
+                await Delay(1_000);
                 return;
             }
             if (IsPauseMenuActive())
@@ -350,6 +353,7 @@ namespace MenuAPI
             // Return if the buttons are not currently enabled.
             if (!AreMenuButtonsEnabled)
             {
+                await Delay(1_000);
                 return;
             }
 
@@ -568,23 +572,27 @@ namespace MenuAPI
 
         private async Task MenuButtonsDisableChecks()
         {
-            bool isInputVisible() => UpdateOnscreenKeyboard() == 0;
-            if (isInputVisible())
+            bool isInputVisible = UpdateOnscreenKeyboard() == 0;
+
+            if (!isInputVisible)
             {
-                bool buttonsState = DisableMenuButtons;
-                while (isInputVisible())
-                {
-                    await Delay(0);
-                    DisableMenuButtons = true;
-                }
-                int timer = GetGameTimer();
-                while (GetGameTimer() - timer < 300)
-                {
-                    await Delay(0);
-                    DisableMenuButtons = true;
-                }
-                DisableMenuButtons = buttonsState;
+                await Delay(1_000);
+                return;
             }
+
+            bool buttonsState = DisableMenuButtons;
+            while (isInputVisible)
+            {
+                await Delay(0);
+                DisableMenuButtons = true;
+            }
+            int timer = GetGameTimer();
+            while (GetGameTimer() - timer < 300)
+            {
+                await Delay(0);
+                DisableMenuButtons = true;
+            }
+            DisableMenuButtons = buttonsState;
         }
         #endregion
 
@@ -733,6 +741,8 @@ namespace MenuAPI
                 )
             )
             {
+                await Delay(1_000);
+
                 UnloadAssets();
                 return;
             }
@@ -777,6 +787,16 @@ namespace MenuAPI
 
         internal static async Task DrawInstructionalButtons()
         {
+            Menu menu = GetCurrentMenu();
+
+            if (menu == null || !menu.Visible || !menu.EnableInstructionalButtons)
+            {
+                DisposeInstructionalButtonsScaleform();
+
+                await Delay(1_000);
+                return;
+            }
+
             if (
                 Game.IsPaused ||
                 Game.Player.IsDead ||
@@ -787,12 +807,8 @@ namespace MenuAPI
             )
             {
                 DisposeInstructionalButtonsScaleform();
-                return;
-            }
-            Menu menu = GetCurrentMenu();
-            if (menu == null || !menu.Visible || !menu.EnableInstructionalButtons)
-            {
-                DisposeInstructionalButtonsScaleform();
+
+                await Delay(1_000);
                 return;
             }
             if (!HasScaleformMovieLoaded(_scale))
@@ -842,13 +858,17 @@ namespace MenuAPI
             EndScaleformMovieMethod();
 
             DrawScaleformMovieFullscreen(_scale, 255, 255, 255, 255, 0);
+
+            _instructionalButtonsLoaded = true;
         }
 
         private static void DisposeInstructionalButtonsScaleform()
         {
-            if (HasScaleformMovieLoaded(_scale))
+            if (_instructionalButtonsLoaded && HasScaleformMovieLoaded(_scale))
             {
                 SetScaleformMovieAsNoLongerNeeded(ref _scale);
+
+                _instructionalButtonsLoaded = false;
             }
         }
     }
