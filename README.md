@@ -1,3 +1,9 @@
+A modified version of MenuAPI for use with Inferno Collection resources.
+
+All rights belong to © Tom Grobbe 2018-2025.
+
+***
+
 # MenuAPI
 
 **FiveM & RedM C# Menu API**
