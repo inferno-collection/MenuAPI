@@ -581,7 +581,7 @@ namespace MenuAPI
             }
 
             bool buttonsState = DisableMenuButtons;
-            while (isInputVisible)
+            while (UpdateOnscreenKeyboard() == 0)
             {
                 await Delay(0);
                 DisableMenuButtons = true;
